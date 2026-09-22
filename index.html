@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Phonics Team Race Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Fredoka+One&family=Quicksand:wght@500;700&display=swap');
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+
+        .font-game {
+            font-family: 'Fredoka One', 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
+        }
+
+        .font-comic {
+            font-family: 'Comic Sans MS', 'Comic Neue', 'Fredoka One', cursive, sans-serif;
+        }
+
+        /* High contrast black border and shadow around pure white text */
+        .text-outlined {
+            color: #ffffff;
+            -webkit-text-stroke: 2.5px #000000;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+        }
+
+        /* Glassmorphism UI Bar */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            transition: all 0.15s ease-in-out;
+        }
+
+        .glass-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .glass-btn:active:not(:disabled) {
+            transform: translateY(0px);
+        }
+
+        /* Game Viewport & Responsive Canvas */
+        #game-viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Transparent draggable word container */
+        .word-node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: move;
+            z-index: 25;
+            touch-action: none;
+            background: transparent;
+            padding: 6px 12px;
+            border-radius: 12px;
+            transition: transform 0.1s ease;
+        }
+
+        .word-node:hover {
+            transform: translate(-50%, -50%) scale(1.08);
+        }
+
+        .word-node:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .editable-node {
+            border: 2px dashed #f59e0b;
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        /* Team Character Markers */
+        .character-sprite {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            z-index: 35;
+            filter: drop-shadow(0 14px 10px rgba(0,0,0,0.7));
+        }
+
+        /* Horizontal flip styling */
+        .flip-x {
+            transform: scaleX(-1);
+        }
+
+        .jumping {
+            animation: jumpArc 0.45s ease-in-out;
+        }
+
+        @keyframes jumpArc {
+            0% { transform: translate(-50%, -100%); }
+            50% { transform: translate(-50%, -150%); }
+            100% { transform: translate(-50%, -100%); }
+        }
+
+        .modal-blur {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between select-none">
+
+    <!-- TOP BAR: Active Team Banners & Scores -->
+    <header class="h-16 glass-panel px-4 md:px-6 flex items-center justify-between z-40 relative shrink-0 shadow-lg">
+        <!-- Team 1 Score -->
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <span class="text-sm md:text-lg font-bold text-sky-400 uppercase tracking-wider font-game">TEAM 1</span>
+            <div class="flex items-center space-x-1.5 bg-sky-950/80 border border-sky-500/50 rounded-xl px-2.5 md:px-3 py-0.5 shadow-inner">
+                <button onclick="changeScore(1, -1)" class="text-sky-300 hover:text-white px-2 py-0.5 text-base font-bold glass-btn rounded-md" title="Decrease Score">-</button>
+                <span id="score-team1" class="font-game text-2xl md:text-3xl text-sky-300 px-2 min-w-[2rem] text-center">0</span>
+                <button onclick="changeScore(1, 1)" class="text-sky-300 hover:text-white px-2 py-0.5 text-base font-bold glass-btn rounded-md" title="Increase Score">+</button>
+            </div>
+        </div>
+
+        <!-- Center Round Indicator -->
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <button onclick="prevRound()" class="glass-btn px-2.5 py-1.5 rounded-lg text-sm md:text-base text-slate-200 hover:text-white" title="Previous Round">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="text-center">
+                <span id="round-title" class="font-game text-lg md:text-2xl text-amber-300 tracking-wide drop-shadow-md">ROUND 1</span>
+            </div>
+            <button onclick="nextRound()" class="glass-btn px-2.5 py-1.5 rounded-lg text-sm md:text-base text-slate-200 hover:text-white" title="Next Round">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Team 2 Score -->
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <div class="flex items-center space-x-1.5 bg-rose-950/80 border border-rose-500/50 rounded-xl px-2.5 md:px-3 py-0.5 shadow-inner">
+                <button onclick="changeScore(2, -1)" class="text-rose-300 hover:text-white px-2 py-0.5 text-base font-bold glass-btn rounded-md" title="Decrease Score">-</button>
+                <span id="score-team2" class="font-game text-2xl md:text-3xl text-rose-300 px-2 min-w-[2rem] text-center">0</span>
+                <button onclick="changeScore(2, 1)" class="text-rose-300 hover:text-white px-2 py-0.5 text-base font-bold glass-btn rounded-md" title="Increase Score">+</button>
+            </div>
+            <span class="text-sm md:text-lg font-bold text-rose-400 uppercase tracking-wider font-game">TEAM 2</span>
+        </div>
+    </header>
+
+    <!-- MAIN VIEWPORT AREA -->
+    <main class="flex-1 flex relative overflow-hidden w-full h-full">
+
+        <div id="game-viewport" class="w-full h-full relative overflow-hidden bg-slate-900 flex-1">
+            <!-- Background Layer -->
+            <div id="bg-layer" class="absolute inset-0 bg-center bg-cover bg-no-repeat transition-all duration-300"></div>
+
+            <!-- SVG Path Connections -->
+            <svg id="paths-svg" class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-60"></svg>
+
+            <!-- Word Container Layer -->
+            <div id="words-layer" class="absolute inset-0 z-20"></div>
+
+            <!-- Team 1 Character Container -->
+            <div id="team1-character" class="character-sprite flex flex-col items-center">
+                <span class="bg-sky-500/90 text-white font-game text-xs px-2.5 py-0.5 rounded-full shadow-lg mb-0.5 border border-white/50">T1</span>
+                <img id="team1-img" src="" alt="Team 1" class="h-28 md:h-36 w-auto object-contain">
+            </div>
+
+            <!-- Team 2 Character Container -->
+            <div id="team2-character" class="character-sprite flex flex-col items-center">
+                <span class="bg-rose-500/90 text-white font-game text-xs px-2.5 py-0.5 rounded-full shadow-lg mb-0.5 border border-white/50">T2</span>
+                <img id="team2-img" src="" alt="Team 2" class="h-28 md:h-36 w-auto object-contain">
+            </div>
+
+            <canvas id="confetti-canvas"></canvas>
+        </div>
+
+        <!-- EDIT SIDE PANEL -->
+        <aside id="edit-panel" class="hidden w-80 md:w-96 glass-panel h-full border-l border-slate-700/50 p-4 overflow-y-auto flex-col z-30 shrink-0">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-700/60 mb-3">
+                <h2 class="font-game text-amber-400 text-lg"><i class="fa-solid fa-gear mr-2"></i>Edit Content</h2>
+                <button onclick="toggleEditMode()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-300 mb-3 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl leading-relaxed">
+                <i class="fa-solid fa-hand-pointer mr-1.5 text-amber-400"></i>
+                You can drag words on screen anytime! Edit target phonics text or media paths below.
+            </p>
+
+            <div class="space-y-3.5 flex-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Round Title</label>
+                    <input type="text" id="input-round-title" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-amber-400">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-bold text-slate-300">Phonics Target Words</label>
+                        <button onclick="addWordNode()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg font-bold">
+                            <i class="fa-solid fa-plus mr-1"></i>Add
+                        </button>
+                    </div>
+                    <div id="words-input-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+
+                <hr class="border-slate-700/60 my-2">
+
+                <div class="space-y-2.5">
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Asset Mappings</h3>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-0.5">Background GIF/Image</label>
+                        <input type="text" id="input-bg-file" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-0.5">T1 Asset</label>
+                            <input type="text" id="input-t1-file" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-0.5">T2 Asset</label>
+                            <input type="text" id="input-t2-file" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-slate-700/60 my-2">
+
+                <div class="space-y-2 pt-1">
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Game Data (JSON)</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="exportConfig()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1.5 rounded-lg font-bold text-slate-200">
+                            <i class="fa-solid fa-download mr-1"></i>Export JSON
+                        </button>
+                        <label class="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1.5 rounded-lg font-bold text-slate-200 text-center cursor-pointer">
+                            <i class="fa-solid fa-upload mr-1"></i>Import JSON
+                            <input type="file" id="import-json-file" accept=".json" onchange="importConfig(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- BOTTOM BAR: Touch Controls -->
+    <footer class="h-16 glass-panel px-3 md:px-6 flex items-center justify-between z-40 relative shrink-0 shadow-xl border-t border-slate-700/50">
+        <!-- Move Team 1 -->
+        <button id="btn-move-t1" onclick="moveTeam(1)" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-game px-4 md:px-6 py-2 rounded-xl text-sm md:text-lg shadow-md flex items-center space-x-2 border border-sky-300/40 active:scale-95 transition-all">
+            <span>➡️ MOVE T1</span>
+        </button>
+
+        <!-- Center Controls -->
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <button onclick="triggerWellDone()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-game px-3.5 py-2 rounded-xl text-xs md:text-sm shadow-md flex items-center space-x-1.5 active:scale-95 transition-all">
+                <i class="fa-solid fa-star text-amber-950 text-base"></i>
+                <span class="hidden sm:inline">WELL DONE!</span>
+            </button>
+
+            <button onclick="resetRound()" class="glass-btn text-slate-200 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5" title="Reset Round Positions">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="hidden md:inline">Reset Round</span>
+            </button>
+
+            <button onclick="resetScores()" class="glass-btn text-slate-200 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5" title="Reset All Scores">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span class="hidden lg:inline">Reset Game</span>
+            </button>
+
+            <button id="btn-edit-toggle" onclick="toggleEditMode()" class="glass-btn text-amber-400 border-amber-400/40 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5 font-bold">
+                <i class="fa-solid fa-gear"></i>
+                <span class="hidden sm:inline">EDIT ⚙️</span>
+            </button>
+
+            <button onclick="toggleFullscreen()" class="glass-btn text-slate-300 p-2.5 rounded-xl text-xs md:text-sm" title="Toggle Fullscreen">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+        </div>
+
+        <!-- Move Team 2 -->
+        <button id="btn-move-t2" onclick="moveTeam(2)" class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-game px-4 md:px-6 py-2 rounded-xl text-sm md:text-lg shadow-md flex items-center space-x-2 border border-rose-300/40 active:scale-95 transition-all">
+            <span>MOVE T2 ⬅️</span>
+        </button>
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           1. DEFAULT CONFIGURATION & INITIAL STATE
+           ========================================================================== */
+        const defaultGameData = {
+            scores: { team1: 0, team2: 0 },
+            currentRound: 0,
+            rounds: [
+                {
+                    title: "ROUND 1",
+                    bg: "round 1.gif",
+                    t1Sprite: "team1R1.gif",
+                    t2Sprite: "team2R1.gif",
+                    circles: [
+                        { id: 1, x: 15, y: 55, text: "cat" },
+                        { id: 2, x: 30, y: 40, text: "dog" },
+                        { id: 3, x: 50, y: 65, text: "pig" },
+                        { id: 4, x: 70, y: 35, text: "fox" },
+                        { id: 5, x: 85, y: 55, text: "bug" }
+                    ]
+                },
+                {
+                    title: "ROUND 2",
+                    bg: "round 2.gif",
+                    t1Sprite: "team1R2.png",
+                    t2Sprite: "team2R2.png",
+                    circles: [
+                        { id: 1, x: 18, y: 45, text: "ship" },
+                        { id: 2, x: 34, y: 65, text: "fish" },
+                        { id: 3, x: 52, y: 35, text: "duck" },
+                        { id: 4, x: 70, y: 65, text: "frog" },
+                        { id: 5, x: 84, y: 45, text: "star" }
+                    ]
+                },
+                {
+                    title: "ROUND 3",
+                    bg: "round 3.gif",
+                    t1Sprite: "team1R3.gif",
+                    t2Sprite: "team2R3.gif",
+                    circles: [
+                        { id: 1, x: 15, y: 60, text: "train" },
+                        { id: 2, x: 35, y: 35, text: "plane" },
+                        { id: 3, x: 50, y: 60, text: "truck" },
+                        { id: 4, x: 65, y: 35, text: "snake" },
+                        { id: 5, x: 85, y: 60, text: "grape" }
+                    ]
+                },
+                {
+                    title: "ROUND 4",
+                    bg: "round 4.gif",
+                    t1Sprite: "team1R4.png",
+                    t2Sprite: "team2R4.png",
+                    circles: [
+                        { id: 1, x: 15, y: 45, text: "beach" },
+                        { id: 2, x: 30, y: 65, text: "shell" },
+                        { id: 3, x: 50, y: 35, text: "shark" },
+                        { id: 4, x: 70, y: 65, text: "whale" },
+                        { id: 5, x: 85, y: 45, text: "crab" }
+                    ]
+                },
+                {
+                    title: "ROUND 5",
+                    bg: "round 5.gif",
+                    t1Sprite: "team1R5.png",
+                    t2Sprite: "team2R5.gif",
+                    circles: [
+                        { id: 1, x: 12, y: 55, text: "space" },
+                        { id: 2, x: 30, y: 35, text: "moon" },
+                        { id: 3, x: 50, y: 60, text: "earth" },
+                        { id: 4, x: 70, y: 35, text: "comet" },
+                        { id: 5, x: 88, y: 55, text: "rocket" }
+                    ]
+                }
+            ]
+        };
+
+        let gameState = JSON.parse(JSON.stringify(defaultGameData));
+        let isEditMode = false;
+        let t1Step = -1;
+        let t2Step = -1;
+        let sortedNodesLeftToRight = [];
+        let sortedNodesRightToLeft = [];
+        let activeDragNode = null;
+
+        /* ==========================================================================
+           2. AUDIO SYNTHESIS ENGINE
+           ========================================================================== */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            try {
+                if (type === 'jump') {
+                    const audio = new Audio('jump.mp3');
+                    audio.play().catch(() => playSynthesizedJump());
+                } else if (type === 'point') {
+                    const audio = new Audio('point.mp3');
+                    audio.play().catch(() => playSynthesizedPoint());
+                } else if (type === 'welldone') {
+                    const audio = new Audio('welldone.mp3');
+                    audio.play().catch(() => playSynthesizedVictory());
+                }
+            } catch (e) {
+                if (type === 'jump') playSynthesizedJump();
+                if (type === 'point') playSynthesizedPoint();
+                if (type === 'welldone') playSynthesizedVictory();
+            }
+        }
+
+        function playSynthesizedJump() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(420, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playSynthesizedPoint() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.25);
+        }
+
+        function playSynthesizedVictory() {
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime + idx * 0.1);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + idx * 0.1 + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + idx * 0.1);
+                osc.stop(audioCtx.currentTime + idx * 0.1 + 0.25);
+            });
+        }
+
+        /* ==========================================================================
+           3. CORE RENDER ENGINE
+           ========================================================================== */
+        function initRound() {
+            const rData = gameState.rounds[gameState.currentRound];
+            document.getElementById('round-title').innerText = rData.title;
+
+            document.getElementById('score-team1').innerText = gameState.scores.team1;
+            document.getElementById('score-team2').innerText = gameState.scores.team2;
+
+            const bgLayer = document.getElementById('bg-layer');
+            bgLayer.style.backgroundImage = `url('${rData.bg}'), linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`;
+            bgLayer.style.backgroundSize = 'cover';
+            bgLayer.style.backgroundPosition = 'center';
+            bgLayer.style.backgroundRepeat = 'no-repeat';
+
+            // Ensure smooth animated GIF rendering without resetting src unnecessarily
+            const t1Img = document.getElementById('team1-img');
+            const t2Img = document.getElementById('team2-img');
+
+            if (t1Img.getAttribute('data-src') !== rData.t1Sprite) {
+                t1Img.setAttribute('data-src', rData.t1Sprite);
+                t1Img.src = rData.t1Sprite;
+            }
+            t1Img.onerror = () => {
+                t1Img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2338bdf8"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">🚀</text></svg>';
+            };
+
+            if (t2Img.getAttribute('data-src') !== rData.t2Sprite) {
+                t2Img.setAttribute('data-src', rData.t2Sprite);
+                t2Img.src = rData.t2Sprite;
+            }
+            t2Img.onerror = () => {
+                t2Img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23f43f5e"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">👾</text></svg>';
+            };
+
+            // Flip Round 1 Team 1 character to face right towards words
+            if (gameState.currentRound === 0) {
+                t1Img.classList.add('flip-x');
+            } else {
+                t1Img.classList.remove('flip-x');
+            }
+
+            // Size adjustments per round
+            if (gameState.currentRound === 4) {
+                t1Img.className = `h-36 md:h-48 w-auto object-contain ${gameState.currentRound === 0 ? 'flip-x' : ''}`;
+                t2Img.className = "h-36 md:h-48 w-auto object-contain";
+            } else {
+                t1Img.className = `h-28 md:h-36 w-auto object-contain ${gameState.currentRound === 0 ? 'flip-x' : ''}`;
+                t2Img.className = "h-28 md:h-36 w-auto object-contain";
+            }
+
+            sortedNodesLeftToRight = [...rData.circles].sort((a, b) => a.x - b.x);
+            sortedNodesRightToLeft = [...rData.circles].sort((a, b) => b.x - a.x);
+
+            t1Step = -1;
+            t2Step = -1;
+
+            renderWordsAndPaths();
+            updateCharacterPositions(false);
+            if (isEditMode) renderEditForm();
+        }
+
+        function renderWordsAndPaths() {
+            const container = document.getElementById('words-layer');
+            const svg = document.getElementById('paths-svg');
+            container.innerHTML = '';
+            svg.innerHTML = '';
+
+            const currentNodes = gameState.rounds[gameState.currentRound].circles;
+
+            // Render connecting SVG dashed lines
+            if (sortedNodesLeftToRight.length > 1) {
+                let pathD = `M ${sortedNodesLeftToRight[0].x}% ${sortedNodesLeftToRight[0].y}%`;
+                for (let i = 1; i < sortedNodesLeftToRight.length; i++) {
+                    pathD += ` L ${sortedNodesLeftToRight[i].x}% ${sortedNodesLeftToRight[i].y}%`;
+                }
+                const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                pathEl.setAttribute("d", pathD);
+                pathEl.setAttribute("stroke", "rgba(255, 255, 255, 0.5)");
+                pathEl.setAttribute("stroke-width", "4");
+                pathEl.setAttribute("stroke-dasharray", "6 6");
+                pathEl.setAttribute("fill", "none");
+                svg.appendChild(pathEl);
+            }
+
+            // Render Words with Comic Sans Outlined Black Text
+            currentNodes.forEach((node) => {
+                const nodeEl = document.createElement('div');
+                nodeEl.className = `word-node ${isEditMode ? 'editable-node' : ''}`;
+                nodeEl.style.left = `${node.x}%`;
+                nodeEl.style.top = `${node.y}%`;
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'font-comic text-outlined leading-none select-none pointer-events-none';
+                textSpan.innerText = node.text.trim() === "" ? `Word ${node.id}` : node.text;
+                
+                const vWidth = window.innerWidth;
+                const baseSize = vWidth < 768 ? 26 : 38;
+                textSpan.style.fontSize = `${baseSize}px`;
+
+                nodeEl.appendChild(textSpan);
+
+                // On-screen direct dragging
+                nodeEl.addEventListener('mousedown', (e) => startDrag(e, node));
+                nodeEl.addEventListener('touchstart', (e) => startDrag(e, node), { passive: false });
+
+                container.appendChild(nodeEl);
+            });
+        }
+
+        /* ==========================================================================
+           4. DIRECT DRAG AND DROP
+           ========================================================================== */
+        function startDrag(e, nodeObj) {
+            e.preventDefault();
+            activeDragNode = nodeObj;
+
+            const viewport = document.getElementById('game-viewport');
+            const rect = viewport.getBoundingClientRect();
+
+            function onMove(moveEvent) {
+                if (!activeDragNode) return;
+
+                const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
+                const clientY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+
+                let newX = ((clientX - rect.left) / rect.width) * 100;
+                let newY = ((clientY - rect.top) / rect.height) * 100;
+
+                newX = Math.max(5, Math.min(95, newX));
+                newY = Math.max(8, Math.min(92, newY));
+
+                activeDragNode.x = Math.round(newX);
+                activeDragNode.y = Math.round(newY);
+
+                const rData = gameState.rounds[gameState.currentRound];
+                sortedNodesLeftToRight = [...rData.circles].sort((a, b) => a.x - b.x);
+                sortedNodesRightToLeft = [...rData.circles].sort((a, b) => b.x - a.x);
+
+                renderWordsAndPaths();
+                updateCharacterPositions(false);
+            }
+
+            function onEnd() {
+                activeDragNode = null;
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onEnd);
+                window.removeEventListener('touchmove', onMove);
+                window.removeEventListener('touchend', onEnd);
+                if (isEditMode) renderEditForm();
+            }
+
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+            window.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend', onEnd);
+        }
+
+        /* ==========================================================================
+           5. GAMEPLAY MOVEMENT & WIN CONDITIONS
+           ========================================================================== */
+        function moveTeam(team) {
+            playSound('jump');
+
+            if (team === 1) {
+                if (t1Step < sortedNodesLeftToRight.length - 1) {
+                    t1Step++;
+                    animateJump('team1-character');
+                    updateCharacterPositions(true);
+
+                    if (t1Step === sortedNodesLeftToRight.length - 1) {
+                        setTimeout(() => handleRoundWin(1), 400);
+                    }
+                }
+            } else if (team === 2) {
+                if (t2Step < sortedNodesRightToLeft.length - 1) {
+                    t2Step++;
+                    animateJump('team2-character');
+                    updateCharacterPositions(true);
+
+                    if (t2Step === sortedNodesRightToLeft.length - 1) {
+                        setTimeout(() => handleRoundWin(2), 400);
+                    }
+                }
+            }
+        }
+
+        function animateJump(elementId) {
+            const el = document.getElementById(elementId);
+            el.classList.remove('jumping');
+            void el.offsetWidth;
+            el.classList.add('jumping');
+        }
+
+        function updateCharacterPositions(animated = true) {
+            const t1El = document.getElementById('team1-character');
+            const t2El = document.getElementById('team2-character');
+
+            // Initial offsets
+            let offLeftX = '5%';
+            let offRightX = '95%';
+            let offY = '55%';
+
+            if (gameState.currentRound === 1) {
+                offLeftX = '6%';
+                offRightX = '94%';
+                offY = '80%'; // Offset downward so target words remain clear
+            }
+
+            if (t1Step === -1) {
+                t1El.style.left = offLeftX;
+                t1El.style.top = offY;
+            } else {
+                const target = sortedNodesLeftToRight[t1Step];
+                t1El.style.left = `${target.x}%`;
+                t1El.style.top = `${target.y}%`;
+            }
+
+            if (t2Step === -1) {
+                t2El.style.left = offRightX;
+                t2El.style.top = offY;
+            } else {
+                const target = sortedNodesRightToLeft[t2Step];
+                t2El.style.left = `${target.x}%`;
+                t2El.style.top = `${target.y}%`;
+            }
+        }
+
+        function handleRoundWin(team) {
+            playSound('welldone');
+            changeScore(team, 1);
+            triggerConfetti();
+
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 modal-blur bg-slate-950/80 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl border border-white/20 transform scale-105 transition-all">
+                    <h2 class="text-3xl md:text-4xl font-game ${team === 1 ? 'text-sky-400' : 'text-rose-400'} mb-3">
+                        🎉 TEAM ${team} WINS ROUND! 🎉
+                    </h2>
+                    <p class="text-slate-200 text-base mb-6 font-semibold">Great phonics racing!</p>
+                    <button onclick="closeModal(this.parentElement.parentElement)" class="bg-gradient-to-r ${team === 1 ? 'from-sky-500 to-blue-600' : 'from-rose-500 to-red-600'} text-white font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full">
+                        NEXT STEP 🚀
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function nextRound() {
+            if (gameState.currentRound < gameState.rounds.length - 1) {
+                gameState.currentRound++;
+                initRound();
+            } else {
+                showFinalGameWinner();
+            }
+        }
+
+        function prevRound() {
+            if (gameState.currentRound > 0) {
+                gameState.currentRound--;
+                initRound();
+            }
+        }
+
+        function showFinalGameWinner() {
+            playSound('welldone');
+            triggerConfetti();
+
+            const s1 = gameState.scores.team1;
+            const s2 = gameState.scores.team2;
+
+            let winnerText = "IT'S A TIE!";
+            let winnerColor = "text-amber-400";
+
+            if (s1 > s2) {
+                winnerText = "🏆 TEAM 1 IS THE WINNER! 🏆";
+                winnerColor = "text-sky-400";
+            } else if (s2 > s1) {
+                winnerText = "🏆 TEAM 2 IS THE WINNER! 🏆";
+                winnerColor = "text-rose-400";
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 modal-blur bg-slate-950/85 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-white/20">
+                    <h2 class="text-3xl md:text-4xl font-game ${winnerColor} mb-4">${winnerText}</h2>
+                    <div class="bg-slate-900/80 rounded-2xl p-4 my-4 border border-slate-700 flex justify-around">
+                        <div>
+                            <p class="text-sky-400 font-game text-sm">TEAM 1</p>
+                            <p class="text-3xl font-game text-white">${s1}</p>
+                        </div>
+                        <div class="border-r border-slate-700"></div>
+                        <div>
+                            <p class="text-rose-400 font-game text-sm">TEAM 2</p>
+                            <p class="text-3xl font-game text-white">${s2}</p>
+                        </div>
+                    </div>
+                    <button onclick="resetScores(); closeModal(this.parentElement.parentElement);" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full">
+                        PLAY AGAIN 🔄
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function closeModal(modalEl) {
+            if (modalEl) modalEl.remove();
+        }
+
+        function triggerWellDone() {
+            playSound('welldone');
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const particles = [];
+            const colors = ['#38bdf8', '#f43f5e', '#10b981', '#f59e0b', '#a855f7', '#ffffff'];
+
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 4 + 2,
+                    speedX: Math.random() * 2 - 1
+                });
+            }
+
+            let animationFrame;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let activeParticles = 0;
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    if (p.y < canvas.height) {
+                        activeParticles++;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x, p.y, p.size, p.size);
+                    }
+                });
+
+                if (activeParticles > 0) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+            render();
+        }
+
+        /* ==========================================================================
+           6. EDIT PANEL & DATA IMPORT/EXPORT
+           ========================================================================== */
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const panel = document.getElementById('edit-panel');
+            const btn = document.getElementById('btn-edit-toggle');
+
+            if (isEditMode) {
+                panel.classList.remove('hidden');
+                panel.classList.add('flex');
+                btn.classList.add('bg-amber-500/20');
+                renderEditForm();
+            } else {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+                btn.classList.remove('bg-amber-500/20');
+            }
+            renderWordsAndPaths();
+        }
+
+        function renderEditForm() {
+            const rData = gameState.rounds[gameState.currentRound];
+            document.getElementById('input-round-title').value = rData.title;
+            document.getElementById('input-bg-file').value = rData.bg;
+            document.getElementById('input-t1-file').value = rData.t1Sprite;
+            document.getElementById('input-t2-file').value = rData.t2Sprite;
+
+            const list = document.getElementById('words-input-list');
+            list.innerHTML = '';
+
+            rData.circles.forEach((c) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center space-x-2 bg-slate-800/80 p-2 rounded-lg border border-slate-700';
+                item.innerHTML = `
+                    <span class="text-xs font-bold text-amber-400 w-6">#${c.id}</span>
+                    <input type="text" value="${c.text}" onchange="updateWordText(${c.id}, this.value)" placeholder="Target Word" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-400">
+                    <button onclick="removeWordNode(${c.id})" class="text-rose-400 hover:text-rose-300 px-1.5 py-0.5 text-xs">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function updateWordText(id, text) {
+            const c = gameState.rounds[gameState.currentRound].circles.find(item => item.id === id);
+            if (c) {
+                c.text = text;
+                renderWordsAndPaths();
+            }
+        }
+
+        function addWordNode() {
+            const circles = gameState.rounds[gameState.currentRound].circles;
+            const newId = circles.length > 0 ? Math.max(...circles.map(c => c.id)) + 1 : 1;
+            circles.push({ id: newId, x: 50, y: 50, text: "word" });
+            initRound();
+        }
+
+        function removeWordNode(id) {
+            let circles = gameState.rounds[gameState.currentRound].circles;
+            if (circles.length <= 2) {
+                alert("Each round requires at least 2 target words!");
+                return;
+            }
+            gameState.rounds[gameState.currentRound].circles = circles.filter(c => c.id !== id);
+            initRound();
+        }
+
+        function updateRoundMetadata() {
+            const rData = gameState.rounds[gameState.currentRound];
+            rData.title = document.getElementById('input-round-title').value;
+            rData.bg = document.getElementById('input-bg-file').value;
+            rData.t1Sprite = document.getElementById('input-t1-file').value;
+            rData.t2Sprite = document.getElementById('input-t2-file').value;
+            
+            // Reset cached image data attribute to force fresh reload if path changed
+            document.getElementById('team1-img').removeAttribute('data-src');
+            document.getElementById('team2-img').removeAttribute('data-src');
+            initRound();
+        }
+
+        function changeScore(team, delta) {
+            playSound('point');
+            if (team === 1) {
+                gameState.scores.team1 = Math.max(0, gameState.scores.team1 + delta);
+                document.getElementById('score-team1').innerText = gameState.scores.team1;
+            } else {
+                gameState.scores.team2 = Math.max(0, gameState.scores.team2 + delta);
+                document.getElementById('score-team2').innerText = gameState.scores.team2;
+            }
+        }
+
+        function resetRound() {
+            t1Step = -1;
+            t2Step = -1;
+            updateCharacterPositions(true);
+        }
+
+        function resetScores() {
+            gameState.scores.team1 = 0;
+            gameState.scores.team2 = 0;
+            gameState.currentRound = 0;
+            t1Step = -1;
+            t2Step = -1;
+            initRound();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        function exportConfig() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameState, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "phonics_race_config.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importConfig(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    if (parsed && parsed.rounds) {
+                        gameState = parsed;
+                        initRound();
+                    }
+                } catch (err) {
+                    alert("Invalid JSON configuration file!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        window.addEventListener('resize', () => {
+            renderWordsAndPaths();
+            updateCharacterPositions(false);
+        });
+
+        // Initialize Game
+        initRound();
+    </script>
+</body>
+</html>
