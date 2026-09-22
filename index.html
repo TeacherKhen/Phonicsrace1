@@ -80,7 +80,6 @@
             z-index: 25;
             touch-action: none;
             background: transparent;
-            padding: 6px 12px;
             border-radius: 12px;
             transition: transform 0.1s ease;
         }
@@ -108,8 +107,8 @@
             filter: drop-shadow(0 14px 10px rgba(0,0,0,0.7));
         }
 
-        /* Horizontal flip styling */
-        .flip-x {
+        /* Explicit Flip class for Team 1 Round 1 */
+        .flip-horizontal {
             transform: scaleX(-1);
         }
 
@@ -118,9 +117,9 @@
         }
 
         @keyframes jumpArc {
-            0% { transform: translate(-50%, -100%); }
-            50% { transform: translate(-50%, -150%); }
-            100% { transform: translate(-50%, -100%); }
+            0% { transform: translate(-50%, -100%) scale(1); }
+            50% { transform: translate(-50%, -150%) scale(1.15, 0.9); }
+            100% { transform: translate(-50%, -100%) scale(1); }
         }
 
         .modal-blur {
@@ -141,11 +140,61 @@
 </head>
 <body class="h-screen w-screen flex flex-col justify-between select-none">
 
+    <!-- INSTRUCTION / START OVERLAY MODAL -->
+    <div id="instructions-modal" class="fixed inset-0 modal-blur bg-slate-950/90 z-50 flex items-center justify-center p-4 md:p-6">
+        <div class="glass-panel p-6 sm:p-8 md:p-10 rounded-3xl max-w-3xl w-full text-center shadow-2xl border border-amber-400/30 flex flex-col items-center space-y-6">
+            
+            <!-- Strictly Single-Line Title & Stickers Banner -->
+            <div class="w-full flex items-center justify-center space-x-2 whitespace-nowrap overflow-hidden">
+                <span class="text-xl sm:text-2xl md:text-3xl lg:text-4xl">🏁</span>
+                <h1 class="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-game text-amber-400 tracking-wider drop-shadow-lg text-center truncate">
+                    PHONICS TEAM RACE
+                </h1>
+                <span class="text-xl sm:text-2xl md:text-3xl lg:text-4xl">🏁</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-left w-full text-sm md:text-base">
+                <!-- How to Play -->
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-sky-500/30 flex flex-col justify-between">
+                    <div>
+                        <h2 class="font-game text-sky-400 text-lg md:text-xl mb-3 flex items-center">
+                            <i class="fa-solid fa-gamepad mr-2.5"></i>HOW TO PLAY
+                        </h2>
+                        <ul class="space-y-2.5 text-slate-200 leading-relaxed">
+                            <li>• Two teams race along the phonics path!</li>
+                            <li>• Click <strong class="text-sky-300">MOVE T1</strong> or <strong class="text-rose-300">MOVE T2</strong> to jump step-by-step.</li>
+                            <li>• Read each word correctly to move forward.</li>
+                            <li>• The <strong class="text-amber-400">fastest team</strong> to reach the last word wins!</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Teacher Controls & Moving Word Boxes -->
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-amber-500/30 flex flex-col justify-between">
+                    <div>
+                        <h2 class="font-game text-amber-400 text-lg md:text-xl mb-3 flex items-center">
+                            <i class="fa-solid fa-pen-to-square mr-2.5"></i>TEACHER SETUP
+                        </h2>
+                        <ul class="space-y-2.5 text-slate-200 leading-relaxed">
+                            <li>• <strong class="text-emerald-300">Drag word boxes on screen</strong> directly with touch or mouse to reposition them anywhere!</li>
+                            <li>• Click <strong class="text-amber-300">EDIT ⚙️</strong> to customize word text or add/delete targets.</li>
+                            <li>• Adjust music volume & text font size in the settings panel.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-game px-12 py-4 rounded-2xl text-xl sm:text-2xl shadow-xl border border-emerald-300/40 transform hover:scale-105 active:scale-95 transition-all w-full md:w-auto">
+                🚀 START GAME!
+            </button>
+        </div>
+    </div>
+
     <!-- TOP BAR: Active Team Banners & Scores -->
     <header class="h-16 glass-panel px-4 md:px-6 flex items-center justify-between z-40 relative shrink-0 shadow-lg">
         <!-- Team 1 Score -->
         <div class="flex items-center space-x-2 md:space-x-3">
-            <span class="text-sm md:text-lg font-bold text-sky-400 uppercase tracking-wider font-game">TEAM 1</span>
+            <span class="text-sm md:text-lg font-bold text-sky-400 uppercase tracking-wider font-game whitespace-nowrap">TEAM 1</span>
             <div class="flex items-center space-x-1.5 bg-sky-950/80 border border-sky-500/50 rounded-xl px-2.5 md:px-3 py-0.5 shadow-inner">
                 <button onclick="changeScore(1, -1)" class="text-sky-300 hover:text-white px-2 py-0.5 text-base font-bold glass-btn rounded-md" title="Decrease Score">-</button>
                 <span id="score-team1" class="font-game text-2xl md:text-3xl text-sky-300 px-2 min-w-[2rem] text-center">0</span>
@@ -159,7 +208,7 @@
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
             <div class="text-center">
-                <span id="round-title" class="font-game text-lg md:text-2xl text-amber-300 tracking-wide drop-shadow-md">ROUND 1</span>
+                <span id="round-title" class="font-game text-lg md:text-2xl text-amber-300 tracking-wide drop-shadow-md whitespace-nowrap">ROUND 1</span>
             </div>
             <button onclick="nextRound()" class="glass-btn px-2.5 py-1.5 rounded-lg text-sm md:text-base text-slate-200 hover:text-white" title="Next Round">
                 <i class="fa-solid fa-chevron-right"></i>
@@ -173,7 +222,7 @@
                 <span id="score-team2" class="font-game text-2xl md:text-3xl text-rose-300 px-2 min-w-[2rem] text-center">0</span>
                 <button onclick="changeScore(2, 1)" class="text-rose-300 hover:text-white px-2 py-0.5 text-base font-bold glass-btn rounded-md" title="Increase Score">+</button>
             </div>
-            <span class="text-sm md:text-lg font-bold text-rose-400 uppercase tracking-wider font-game">TEAM 2</span>
+            <span class="text-sm md:text-lg font-bold text-rose-400 uppercase tracking-wider font-game whitespace-nowrap">TEAM 2</span>
         </div>
     </header>
 
@@ -190,13 +239,13 @@
             <!-- Word Container Layer -->
             <div id="words-layer" class="absolute inset-0 z-20"></div>
 
-            <!-- Team 1 Character Container -->
+            <!-- Team 1 Character -->
             <div id="team1-character" class="character-sprite flex flex-col items-center">
                 <span class="bg-sky-500/90 text-white font-game text-xs px-2.5 py-0.5 rounded-full shadow-lg mb-0.5 border border-white/50">T1</span>
                 <img id="team1-img" src="" alt="Team 1" class="h-28 md:h-36 w-auto object-contain">
             </div>
 
-            <!-- Team 2 Character Container -->
+            <!-- Team 2 Character -->
             <div id="team2-character" class="character-sprite flex flex-col items-center">
                 <span class="bg-rose-500/90 text-white font-game text-xs px-2.5 py-0.5 rounded-full shadow-lg mb-0.5 border border-white/50">T2</span>
                 <img id="team2-img" src="" alt="Team 2" class="h-28 md:h-36 w-auto object-contain">
@@ -208,7 +257,7 @@
         <!-- EDIT SIDE PANEL -->
         <aside id="edit-panel" class="hidden w-80 md:w-96 glass-panel h-full border-l border-slate-700/50 p-4 overflow-y-auto flex-col z-30 shrink-0">
             <div class="flex items-center justify-between pb-2.5 border-b border-slate-700/60 mb-3">
-                <h2 class="font-game text-amber-400 text-lg"><i class="fa-solid fa-gear mr-2"></i>Edit Content</h2>
+                <h2 class="font-game text-amber-400 text-lg whitespace-nowrap"><i class="fa-solid fa-gear mr-2"></i>Edit Content</h2>
                 <button onclick="toggleEditMode()" class="text-slate-400 hover:text-white p-1">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
@@ -216,19 +265,50 @@
 
             <p class="text-xs text-slate-300 mb-3 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl leading-relaxed">
                 <i class="fa-solid fa-hand-pointer mr-1.5 text-amber-400"></i>
-                You can drag words on screen anytime! Edit target phonics text or media paths below.
+                You can drag words on screen directly! Adjust text sizes and audio controls below.
             </p>
 
             <div class="space-y-3.5 flex-1">
+                <!-- Background Music & Volume Control -->
+                <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap flex items-center">
+                            <i class="fa-solid fa-music mr-1.5"></i>Background Music
+                        </h3>
+                        <button onclick="toggleMusicMute()" id="btn-music-mute" class="text-xs bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-amber-300 font-bold">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>Volume:</span>
+                            <span id="music-volume-val" class="font-bold text-amber-400">50%</span>
+                        </div>
+                        <input type="range" id="input-bgm-volume" min="0" max="100" value="50" oninput="updateBgmVolume(this.value)" class="w-full accent-amber-400 cursor-pointer">
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-slate-300 mb-1">Round Title</label>
                     <input type="text" id="input-round-title" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-amber-400">
                 </div>
 
+                <!-- Text Box Size Control -->
+                <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-2">
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap">Text Box Resizing</h3>
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-300 mb-1">
+                            <span>Font Size:</span>
+                            <span id="font-size-val" class="font-bold text-amber-400">38px</span>
+                        </div>
+                        <input type="range" id="input-font-size" min="20" max="70" value="38" oninput="updateTextSize(this.value)" class="w-full accent-amber-400 cursor-pointer">
+                    </div>
+                </div>
+
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
                         <label class="block text-xs font-bold text-slate-300">Phonics Target Words</label>
-                        <button onclick="addWordNode()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg font-bold">
+                        <button onclick="addWordNode()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg font-bold whitespace-nowrap">
                             <i class="fa-solid fa-plus mr-1"></i>Add
                         </button>
                     </div>
@@ -237,33 +317,13 @@
 
                 <hr class="border-slate-700/60 my-2">
 
-                <div class="space-y-2.5">
-                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Asset Mappings</h3>
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-0.5">Background GIF/Image</label>
-                        <input type="text" id="input-bg-file" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-0.5">T1 Asset</label>
-                            <input type="text" id="input-t1-file" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] text-slate-400 mb-0.5">T2 Asset</label>
-                            <input type="text" id="input-t2-file" onchange="updateRoundMetadata()" class="w-full bg-slate-800 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-slate-200">
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="border-slate-700/60 my-2">
-
                 <div class="space-y-2 pt-1">
-                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Game Data (JSON)</h3>
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap">Game Data (JSON)</h3>
                     <div class="flex space-x-2">
-                        <button onclick="exportConfig()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1.5 rounded-lg font-bold text-slate-200">
+                        <button onclick="exportConfig()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1.5 rounded-lg font-bold text-slate-200 whitespace-nowrap">
                             <i class="fa-solid fa-download mr-1"></i>Export JSON
                         </button>
-                        <label class="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1.5 rounded-lg font-bold text-slate-200 text-center cursor-pointer">
+                        <label class="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1.5 rounded-lg font-bold text-slate-200 text-center cursor-pointer whitespace-nowrap">
                             <i class="fa-solid fa-upload mr-1"></i>Import JSON
                             <input type="file" id="import-json-file" accept=".json" onchange="importConfig(event)" class="hidden">
                         </label>
@@ -276,28 +336,33 @@
     <!-- BOTTOM BAR: Touch Controls -->
     <footer class="h-16 glass-panel px-3 md:px-6 flex items-center justify-between z-40 relative shrink-0 shadow-xl border-t border-slate-700/50">
         <!-- Move Team 1 -->
-        <button id="btn-move-t1" onclick="moveTeam(1)" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-game px-4 md:px-6 py-2 rounded-xl text-sm md:text-lg shadow-md flex items-center space-x-2 border border-sky-300/40 active:scale-95 transition-all">
+        <button id="btn-move-t1" onclick="moveTeam(1)" class="bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-game px-4 md:px-6 py-2 rounded-xl text-sm md:text-lg shadow-md flex items-center space-x-2 border border-sky-300/40 active:scale-95 transition-all whitespace-nowrap">
             <span>➡️ MOVE T1</span>
         </button>
 
         <!-- Center Controls -->
         <div class="flex items-center space-x-2 md:space-x-3">
-            <button onclick="triggerWellDone()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-game px-3.5 py-2 rounded-xl text-xs md:text-sm shadow-md flex items-center space-x-1.5 active:scale-95 transition-all">
+            <button onclick="showInstructions()" class="glass-btn text-amber-300 border-amber-400/40 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5 font-bold whitespace-nowrap" title="View Instructions">
+                <i class="fa-solid fa-circle-info"></i>
+                <span class="hidden sm:inline">Help</span>
+            </button>
+
+            <button onclick="triggerWellDone()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-game px-3.5 py-2 rounded-xl text-xs md:text-sm shadow-md flex items-center space-x-1.5 active:scale-95 transition-all whitespace-nowrap">
                 <i class="fa-solid fa-star text-amber-950 text-base"></i>
                 <span class="hidden sm:inline">WELL DONE!</span>
             </button>
 
-            <button onclick="resetRound()" class="glass-btn text-slate-200 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5" title="Reset Round Positions">
+            <button onclick="resetRound()" class="glass-btn text-slate-200 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5 whitespace-nowrap" title="Reset Round Positions">
                 <i class="fa-solid fa-rotate-left"></i>
                 <span class="hidden md:inline">Reset Round</span>
             </button>
 
-            <button onclick="resetScores()" class="glass-btn text-slate-200 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5" title="Reset All Scores">
+            <button onclick="resetScores()" class="glass-btn text-slate-200 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5 whitespace-nowrap" title="Reset All Scores">
                 <i class="fa-solid fa-arrows-rotate"></i>
                 <span class="hidden lg:inline">Reset Game</span>
             </button>
 
-            <button id="btn-edit-toggle" onclick="toggleEditMode()" class="glass-btn text-amber-400 border-amber-400/40 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5 font-bold">
+            <button id="btn-edit-toggle" onclick="toggleEditMode()" class="glass-btn text-amber-400 border-amber-400/40 px-3 py-2 rounded-xl text-xs md:text-sm flex items-center space-x-1.5 font-bold whitespace-nowrap">
                 <i class="fa-solid fa-gear"></i>
                 <span class="hidden sm:inline">EDIT ⚙️</span>
             </button>
@@ -308,18 +373,20 @@
         </div>
 
         <!-- Move Team 2 -->
-        <button id="btn-move-t2" onclick="moveTeam(2)" class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-game px-4 md:px-6 py-2 rounded-xl text-sm md:text-lg shadow-md flex items-center space-x-2 border border-rose-300/40 active:scale-95 transition-all">
+        <button id="btn-move-t2" onclick="moveTeam(2)" class="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-game px-4 md:px-6 py-2 rounded-xl text-sm md:text-lg shadow-md flex items-center space-x-2 border border-rose-300/40 active:scale-95 transition-all whitespace-nowrap">
             <span>MOVE T2 ⬅️</span>
         </button>
     </footer>
 
     <script>
         /* ==========================================================================
-           1. DEFAULT CONFIGURATION & INITIAL STATE
+           1. DEFAULT CONFIGURATION & INITIAL STATE (STRICTLY 5 ROUNDS)
            ========================================================================== */
         const defaultGameData = {
             scores: { team1: 0, team2: 0 },
             currentRound: 0,
+            customFontSize: 38,
+            bgmVolume: 50,
             rounds: [
                 {
                     title: "ROUND 1",
@@ -327,37 +394,37 @@
                     t1Sprite: "team1R1.gif",
                     t2Sprite: "team2R1.gif",
                     circles: [
-                        { id: 1, x: 15, y: 55, text: "cat" },
-                        { id: 2, x: 30, y: 40, text: "dog" },
-                        { id: 3, x: 50, y: 65, text: "pig" },
-                        { id: 4, x: 70, y: 35, text: "fox" },
-                        { id: 5, x: 85, y: 55, text: "bug" }
+                        { id: 1, x: 18, y: 50, text: "cat" },
+                        { id: 2, x: 34, y: 35, text: "dog" },
+                        { id: 3, x: 50, y: 60, text: "pig" },
+                        { id: 4, x: 68, y: 35, text: "fox" },
+                        { id: 5, x: 82, y: 50, text: "bug" }
                     ]
                 },
                 {
                     title: "ROUND 2",
                     bg: "round 2.gif",
-                    t1Sprite: "team1R2.png",
+                    t1Sprite: "team1R2.png", // Eagle
                     t2Sprite: "team2R2.png",
                     circles: [
-                        { id: 1, x: 18, y: 45, text: "ship" },
-                        { id: 2, x: 34, y: 65, text: "fish" },
-                        { id: 3, x: 52, y: 35, text: "duck" },
-                        { id: 4, x: 70, y: 65, text: "frog" },
-                        { id: 5, x: 84, y: 45, text: "star" }
+                        { id: 1, x: 18, y: 40, text: "ship" },
+                        { id: 2, x: 35, y: 60, text: "fish" },
+                        { id: 3, x: 52, y: 30, text: "duck" },
+                        { id: 4, x: 70, y: 60, text: "frog" },
+                        { id: 5, x: 84, y: 40, text: "star" }
                     ]
                 },
                 {
                     title: "ROUND 3",
                     bg: "round 3.gif",
-                    t1Sprite: "team1R3.gif",
-                    t2Sprite: "team2R3.gif",
+                    t1Sprite: "team1R3.gif", // Bat
+                    t2Sprite: "team2R3.gif", // Owl
                     circles: [
-                        { id: 1, x: 15, y: 60, text: "train" },
-                        { id: 2, x: 35, y: 35, text: "plane" },
-                        { id: 3, x: 50, y: 60, text: "truck" },
-                        { id: 4, x: 65, y: 35, text: "snake" },
-                        { id: 5, x: 85, y: 60, text: "grape" }
+                        { id: 1, x: 18, y: 55, text: "train" },
+                        { id: 2, x: 35, y: 30, text: "plane" },
+                        { id: 3, x: 50, y: 55, text: "truck" },
+                        { id: 4, x: 65, y: 30, text: "snake" },
+                        { id: 5, x: 82, y: 55, text: "grape" }
                     ]
                 },
                 {
@@ -366,11 +433,11 @@
                     t1Sprite: "team1R4.png",
                     t2Sprite: "team2R4.png",
                     circles: [
-                        { id: 1, x: 15, y: 45, text: "beach" },
-                        { id: 2, x: 30, y: 65, text: "shell" },
-                        { id: 3, x: 50, y: 35, text: "shark" },
-                        { id: 4, x: 70, y: 65, text: "whale" },
-                        { id: 5, x: 85, y: 45, text: "crab" }
+                        { id: 1, x: 18, y: 40, text: "beach" },
+                        { id: 2, x: 34, y: 60, text: "shell" },
+                        { id: 3, x: 50, y: 30, text: "shark" },
+                        { id: 4, x: 68, y: 60, text: "whale" },
+                        { id: 5, x: 82, y: 40, text: "crab" }
                     ]
                 },
                 {
@@ -379,11 +446,11 @@
                     t1Sprite: "team1R5.png",
                     t2Sprite: "team2R5.gif",
                     circles: [
-                        { id: 1, x: 12, y: 55, text: "space" },
-                        { id: 2, x: 30, y: 35, text: "moon" },
-                        { id: 3, x: 50, y: 60, text: "earth" },
-                        { id: 4, x: 70, y: 35, text: "comet" },
-                        { id: 5, x: 88, y: 55, text: "rocket" }
+                        { id: 1, x: 18, y: 50, text: "space" },
+                        { id: 2, x: 34, y: 30, text: "moon" },
+                        { id: 3, x: 50, y: 55, text: "earth" },
+                        { id: 4, x: 68, y: 30, text: "comet" },
+                        { id: 5, x: 82, y: 50, text: "rocket" }
                     ]
                 }
             ]
@@ -398,9 +465,51 @@
         let activeDragNode = null;
 
         /* ==========================================================================
-           2. AUDIO SYNTHESIS ENGINE
+           2. HIGH-AUDIBILITY AUDIO ENGINE & LOUD SOUND EFFECTS
            ========================================================================== */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Background Music Audio Element
+        const bgAudio = new Audio('background music.mp3');
+        bgAudio.loop = true;
+        bgAudio.volume = 0.5;
+
+        function startBgMusic() {
+            if (bgAudio.paused) {
+                bgAudio.play().catch(() => {
+                    console.log("Audio play blocked until user gesture.");
+                });
+            }
+        }
+
+        function updateBgmVolume(val) {
+            const vol = parseInt(val) / 100;
+            gameState.bgmVolume = parseInt(val);
+            bgAudio.volume = vol;
+            document.getElementById('music-volume-val').innerText = `${val}%`;
+            
+            const btn = document.getElementById('btn-music-mute');
+            if (vol === 0) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                btn.classList.add('text-rose-400');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                btn.classList.remove('text-rose-400');
+            }
+        }
+
+        function toggleMusicMute() {
+            if (bgAudio.volume > 0) {
+                bgAudio.setAttribute('data-prev-vol', bgAudio.volume);
+                updateBgmVolume(0);
+                document.getElementById('input-bgm-volume').value = 0;
+            } else {
+                const prev = bgAudio.getAttribute('data-prev-vol') || 0.5;
+                const val = Math.round(prev * 100);
+                updateBgmVolume(val);
+                document.getElementById('input-bgm-volume').value = val;
+            }
+        }
 
         function playSound(type) {
             if (audioCtx.state === 'suspended') {
@@ -409,12 +518,15 @@
             try {
                 if (type === 'jump') {
                     const audio = new Audio('jump.mp3');
+                    audio.volume = 1.0;
                     audio.play().catch(() => playSynthesizedJump());
                 } else if (type === 'point') {
                     const audio = new Audio('point.mp3');
+                    audio.volume = 1.0;
                     audio.play().catch(() => playSynthesizedPoint());
                 } else if (type === 'welldone') {
                     const audio = new Audio('welldone.mp3');
+                    audio.volume = 1.0;
                     audio.play().catch(() => playSynthesizedVictory());
                 }
             } catch (e) {
@@ -428,14 +540,14 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(160, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(420, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.18);
+            gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.18);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.15);
+            osc.stop(audioCtx.currentTime + 0.18);
         }
 
         function playSynthesizedPoint() {
@@ -444,7 +556,7 @@
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
             osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -459,7 +571,7 @@
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.25, audioCtx.currentTime + idx * 0.1);
+                gain.gain.setValueAtTime(0.85, audioCtx.currentTime + idx * 0.1);
                 gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + idx * 0.1 + 0.25);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -469,7 +581,19 @@
         }
 
         /* ==========================================================================
-           3. CORE RENDER ENGINE
+           3. INSTRUCTIONS CONTROLLER
+           ========================================================================== */
+        function startGame() {
+            document.getElementById('instructions-modal').classList.add('hidden');
+            startBgMusic();
+        }
+
+        function showInstructions() {
+            document.getElementById('instructions-modal').classList.remove('hidden');
+        }
+
+        /* ==========================================================================
+           4. CORE RENDER ENGINE
            ========================================================================== */
         function initRound() {
             const rData = gameState.rounds[gameState.currentRound];
@@ -481,42 +605,44 @@
             const bgLayer = document.getElementById('bg-layer');
             bgLayer.style.backgroundImage = `url('${rData.bg}'), linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`;
             bgLayer.style.backgroundSize = 'cover';
-            bgLayer.style.backgroundPosition = 'center';
-            bgLayer.style.backgroundRepeat = 'no-repeat';
+            bgLayer.style.backgroundPosition = 'center center';
 
-            // Ensure smooth animated GIF rendering without resetting src unnecessarily
+            const t1Container = document.getElementById('team1-character');
+            const t2Container = document.getElementById('team2-character');
             const t1Img = document.getElementById('team1-img');
             const t2Img = document.getElementById('team2-img');
 
+            t1Container.style.display = 'flex';
+            t2Container.style.display = 'flex';
+
             if (t1Img.getAttribute('data-src') !== rData.t1Sprite) {
-                t1Img.setAttribute('data-src', rData.t1Sprite);
                 t1Img.src = rData.t1Sprite;
+                t1Img.setAttribute('data-src', rData.t1Sprite);
             }
+            if (t2Img.getAttribute('data-src') !== rData.t2Sprite) {
+                t2Img.src = rData.t2Sprite;
+                t2Img.setAttribute('data-src', rData.t2Sprite);
+            }
+
             t1Img.onerror = () => {
                 t1Img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%2338bdf8"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">🚀</text></svg>';
             };
 
-            if (t2Img.getAttribute('data-src') !== rData.t2Sprite) {
-                t2Img.setAttribute('data-src', rData.t2Sprite);
-                t2Img.src = rData.t2Sprite;
-            }
             t2Img.onerror = () => {
                 t2Img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23f43f5e"/><text x="50" y="65" font-size="45" text-anchor="middle" fill="white">👾</text></svg>';
             };
 
-            // Flip Round 1 Team 1 character to face right towards words
             if (gameState.currentRound === 0) {
-                t1Img.classList.add('flip-x');
+                t1Img.classList.add('flip-horizontal');
             } else {
-                t1Img.classList.remove('flip-x');
+                t1Img.classList.remove('flip-horizontal');
             }
 
-            // Size adjustments per round
             if (gameState.currentRound === 4) {
-                t1Img.className = `h-36 md:h-48 w-auto object-contain ${gameState.currentRound === 0 ? 'flip-x' : ''}`;
+                t1Img.className = `h-36 md:h-48 w-auto object-contain ${gameState.currentRound === 0 ? 'flip-horizontal' : ''}`;
                 t2Img.className = "h-36 md:h-48 w-auto object-contain";
             } else {
-                t1Img.className = `h-28 md:h-36 w-auto object-contain ${gameState.currentRound === 0 ? 'flip-x' : ''}`;
+                t1Img.className = `h-28 md:h-36 w-auto object-contain ${gameState.currentRound === 0 ? 'flip-horizontal' : ''}`;
                 t2Img.className = "h-28 md:h-36 w-auto object-contain";
             }
 
@@ -539,7 +665,6 @@
 
             const currentNodes = gameState.rounds[gameState.currentRound].circles;
 
-            // Render connecting SVG dashed lines
             if (sortedNodesLeftToRight.length > 1) {
                 let pathD = `M ${sortedNodesLeftToRight[0].x}% ${sortedNodesLeftToRight[0].y}%`;
                 for (let i = 1; i < sortedNodesLeftToRight.length; i++) {
@@ -554,7 +679,6 @@
                 svg.appendChild(pathEl);
             }
 
-            // Render Words with Comic Sans Outlined Black Text
             currentNodes.forEach((node) => {
                 const nodeEl = document.createElement('div');
                 nodeEl.className = `word-node ${isEditMode ? 'editable-node' : ''}`;
@@ -562,16 +686,14 @@
                 nodeEl.style.top = `${node.y}%`;
 
                 const textSpan = document.createElement('span');
-                textSpan.className = 'font-comic text-outlined leading-none select-none pointer-events-none';
+                textSpan.className = 'font-comic text-outlined leading-none select-none pointer-events-none whitespace-nowrap';
                 textSpan.innerText = node.text.trim() === "" ? `Word ${node.id}` : node.text;
                 
-                const vWidth = window.innerWidth;
-                const baseSize = vWidth < 768 ? 26 : 38;
+                const baseSize = gameState.customFontSize || 38;
                 textSpan.style.fontSize = `${baseSize}px`;
 
                 nodeEl.appendChild(textSpan);
 
-                // On-screen direct dragging
                 nodeEl.addEventListener('mousedown', (e) => startDrag(e, node));
                 nodeEl.addEventListener('touchstart', (e) => startDrag(e, node), { passive: false });
 
@@ -580,7 +702,7 @@
         }
 
         /* ==========================================================================
-           4. DIRECT DRAG AND DROP
+           5. DIRECT DRAG AND DROP
            ========================================================================== */
         function startDrag(e, nodeObj) {
             e.preventDefault();
@@ -628,7 +750,7 @@
         }
 
         /* ==========================================================================
-           5. GAMEPLAY MOVEMENT & WIN CONDITIONS
+           6. GAMEPLAY MOVEMENT & OBSTRUCTION-FREE POSITIONS
            ========================================================================== */
         function moveTeam(team) {
             playSound('jump');
@@ -667,20 +789,15 @@
             const t1El = document.getElementById('team1-character');
             const t2El = document.getElementById('team2-character');
 
-            // Initial offsets
-            let offLeftX = '5%';
-            let offRightX = '95%';
-            let offY = '55%';
-
-            if (gameState.currentRound === 1) {
-                offLeftX = '6%';
-                offRightX = '94%';
-                offY = '80%'; // Offset downward so target words remain clear
-            }
-
             if (t1Step === -1) {
-                t1El.style.left = offLeftX;
-                t1El.style.top = offY;
+                t1El.style.left = '6%';
+                if (gameState.currentRound === 1) { // Round 2 offset
+                    t1El.style.top = '82%';
+                } else if (gameState.currentRound === 2) { // Round 3 offset
+                    t1El.style.top = '85%';
+                } else {
+                    t1El.style.top = '65%';
+                }
             } else {
                 const target = sortedNodesLeftToRight[t1Step];
                 t1El.style.left = `${target.x}%`;
@@ -688,8 +805,14 @@
             }
 
             if (t2Step === -1) {
-                t2El.style.left = offRightX;
-                t2El.style.top = offY;
+                t2El.style.left = '94%';
+                if (gameState.currentRound === 1) { // Round 2 offset
+                    t2El.style.top = '82%';
+                } else if (gameState.currentRound === 2) { // Round 3 offset
+                    t2El.style.top = '85%';
+                } else {
+                    t2El.style.top = '65%';
+                }
             } else {
                 const target = sortedNodesRightToLeft[t2Step];
                 t2El.style.left = `${target.x}%`;
@@ -702,16 +825,18 @@
             changeScore(team, 1);
             triggerConfetti();
 
+            const isLastRound = gameState.currentRound === gameState.rounds.length - 1;
+
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 modal-blur bg-slate-950/80 z-50 flex items-center justify-center p-4';
             modal.innerHTML = `
                 <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl border border-white/20 transform scale-105 transition-all">
-                    <h2 class="text-3xl md:text-4xl font-game ${team === 1 ? 'text-sky-400' : 'text-rose-400'} mb-3">
+                    <h2 class="text-2xl md:text-3xl font-game ${team === 1 ? 'text-sky-400' : 'text-rose-400'} mb-3 whitespace-nowrap">
                         🎉 TEAM ${team} WINS ROUND! 🎉
                     </h2>
                     <p class="text-slate-200 text-base mb-6 font-semibold">Great phonics racing!</p>
-                    <button onclick="closeModal(this.parentElement.parentElement)" class="bg-gradient-to-r ${team === 1 ? 'from-sky-500 to-blue-600' : 'from-rose-500 to-red-600'} text-white font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full">
-                        NEXT STEP 🚀
+                    <button onclick="closeModal(this.parentElement.parentElement); ${isLastRound ? 'showFinalGameWinner();' : 'nextRound();'}" class="bg-gradient-to-r ${team === 1 ? 'from-sky-500 to-blue-600' : 'from-rose-500 to-red-600'} text-white font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full whitespace-nowrap">
+                        ${isLastRound ? 'SEE RESULTS 🏆' : 'NEXT ROUND 🚀'}
                     </button>
                 </div>
             `;
@@ -756,19 +881,19 @@
             modal.className = 'fixed inset-0 modal-blur bg-slate-950/85 z-50 flex items-center justify-center p-4';
             modal.innerHTML = `
                 <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-white/20">
-                    <h2 class="text-3xl md:text-4xl font-game ${winnerColor} mb-4">${winnerText}</h2>
+                    <h2 class="text-2xl md:text-3xl font-game ${winnerColor} mb-4 whitespace-nowrap">${winnerText}</h2>
                     <div class="bg-slate-900/80 rounded-2xl p-4 my-4 border border-slate-700 flex justify-around">
                         <div>
-                            <p class="text-sky-400 font-game text-sm">TEAM 1</p>
+                            <p class="text-sky-400 font-game text-sm whitespace-nowrap">TEAM 1</p>
                             <p class="text-3xl font-game text-white">${s1}</p>
                         </div>
                         <div class="border-r border-slate-700"></div>
                         <div>
-                            <p class="text-rose-400 font-game text-sm">TEAM 2</p>
+                            <p class="text-rose-400 font-game text-sm whitespace-nowrap">TEAM 2</p>
                             <p class="text-3xl font-game text-white">${s2}</p>
                         </div>
                     </div>
-                    <button onclick="resetScores(); closeModal(this.parentElement.parentElement);" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full">
+                    <button onclick="resetScores(); closeModal(this.parentElement.parentElement);" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full whitespace-nowrap">
                         PLAY AGAIN 🔄
                     </button>
                 </div>
@@ -831,7 +956,7 @@
         }
 
         /* ==========================================================================
-           6. EDIT PANEL & DATA IMPORT/EXPORT
+           7. EDIT PANEL & CONTROLS
            ========================================================================== */
         function toggleEditMode() {
             isEditMode = !isEditMode;
@@ -851,12 +976,17 @@
             renderWordsAndPaths();
         }
 
+        function updateTextSize(val) {
+            gameState.customFontSize = parseInt(val);
+            document.getElementById('font-size-val').innerText = `${val}px`;
+            renderWordsAndPaths();
+        }
+
         function renderEditForm() {
             const rData = gameState.rounds[gameState.currentRound];
             document.getElementById('input-round-title').value = rData.title;
-            document.getElementById('input-bg-file').value = rData.bg;
-            document.getElementById('input-t1-file').value = rData.t1Sprite;
-            document.getElementById('input-t2-file').value = rData.t2Sprite;
+            document.getElementById('input-font-size').value = gameState.customFontSize || 38;
+            document.getElementById('font-size-val').innerText = `${gameState.customFontSize || 38}px`;
 
             const list = document.getElementById('words-input-list');
             list.innerHTML = '';
@@ -903,13 +1033,6 @@
         function updateRoundMetadata() {
             const rData = gameState.rounds[gameState.currentRound];
             rData.title = document.getElementById('input-round-title').value;
-            rData.bg = document.getElementById('input-bg-file').value;
-            rData.t1Sprite = document.getElementById('input-t1-file').value;
-            rData.t2Sprite = document.getElementById('input-t2-file').value;
-            
-            // Reset cached image data attribute to force fresh reload if path changed
-            document.getElementById('team1-img').removeAttribute('data-src');
-            document.getElementById('team2-img').removeAttribute('data-src');
             initRound();
         }
 
