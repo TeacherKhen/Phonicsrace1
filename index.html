@@ -472,7 +472,7 @@
         // Background Music Audio Element
         const bgAudio = new Audio('background music.mp3');
         bgAudio.loop = true;
-        bgAudio.volume = 0.5;
+        bgAudio.volume = 0.35; // Lowered bgm slightly to prioritize loud SFX
 
         function startBgMusic() {
             if (bgAudio.paused) {
@@ -483,7 +483,7 @@
         }
 
         function updateBgmVolume(val) {
-            const vol = parseInt(val) / 100;
+            const vol = (parseInt(val) / 100) * 0.7;
             gameState.bgmVolume = parseInt(val);
             bgAudio.volume = vol;
             document.getElementById('music-volume-val').innerText = `${val}%`;
@@ -504,8 +504,8 @@
                 updateBgmVolume(0);
                 document.getElementById('input-bgm-volume').value = 0;
             } else {
-                const prev = bgAudio.getAttribute('data-prev-vol') || 0.5;
-                const val = Math.round(prev * 100);
+                const prev = bgAudio.getAttribute('data-prev-vol') || 0.35;
+                const val = Math.round((prev / 0.7) * 100);
                 updateBgmVolume(val);
                 document.getElementById('input-bgm-volume').value = val;
             }
@@ -540,28 +540,28 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.18);
-            gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.18);
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(650, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(1.5, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.18);
+            osc.stop(audioCtx.currentTime + 0.2);
         }
 
         function playSynthesizedPoint() {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-            osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
-            gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+            osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(1.5, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.28);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.25);
+            osc.stop(audioCtx.currentTime + 0.28);
         }
 
         function playSynthesizedVictory() {
@@ -571,12 +571,12 @@
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
                 osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0.85, audioCtx.currentTime + idx * 0.1);
-                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + idx * 0.1 + 0.25);
+                gain.gain.setValueAtTime(1.2, audioCtx.currentTime + idx * 0.1);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + idx * 0.1 + 0.3);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start(audioCtx.currentTime + idx * 0.1);
-                osc.stop(audioCtx.currentTime + idx * 0.1 + 0.25);
+                osc.stop(audioCtx.currentTime + idx * 0.1 + 0.3);
             });
         }
 
@@ -830,12 +830,12 @@
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 modal-blur bg-slate-950/80 z-50 flex items-center justify-center p-4';
             modal.innerHTML = `
-                <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl border border-white/20 transform scale-105 transition-all">
-                    <h2 class="text-2xl md:text-3xl font-game ${team === 1 ? 'text-sky-400' : 'text-rose-400'} mb-3 whitespace-nowrap">
-                        🎉 TEAM ${team} WINS ROUND! 🎉
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl max-w-md w-11/12 text-center shadow-2xl border border-white/20 transform scale-100 flex flex-col items-center justify-center space-y-4">
+                    <h2 class="text-3xl sm:text-4xl font-game ${team === 1 ? 'text-sky-400' : 'text-rose-400'} tracking-wide text-center leading-tight">
+                        Team ${team} Won
                     </h2>
-                    <p class="text-slate-200 text-base mb-6 font-semibold">Great phonics racing!</p>
-                    <button onclick="closeModal(this.parentElement.parentElement); ${isLastRound ? 'showFinalGameWinner();' : 'nextRound();'}" class="bg-gradient-to-r ${team === 1 ? 'from-sky-500 to-blue-600' : 'from-rose-500 to-red-600'} text-white font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full whitespace-nowrap">
+                    <p class="text-slate-200 text-sm sm:text-base font-semibold">Great job racing through phonics!</p>
+                    <button onclick="closeModal(this.parentElement.parentElement); ${isLastRound ? 'showFinalGameWinner();' : 'nextRound();'}" class="bg-gradient-to-r ${team === 1 ? 'from-sky-500 to-blue-600' : 'from-rose-500 to-red-600'} text-white font-game px-8 py-3.5 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full">
                         ${isLastRound ? 'SEE RESULTS 🏆' : 'NEXT ROUND 🚀'}
                     </button>
                 </div>
@@ -870,18 +870,18 @@
             let winnerColor = "text-amber-400";
 
             if (s1 > s2) {
-                winnerText = "🏆 TEAM 1 IS THE WINNER! 🏆";
+                winnerText = "Team 1 Won";
                 winnerColor = "text-sky-400";
             } else if (s2 > s1) {
-                winnerText = "🏆 TEAM 2 IS THE WINNER! 🏆";
+                winnerText = "Team 2 Won";
                 winnerColor = "text-rose-400";
             }
 
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 modal-blur bg-slate-950/85 z-50 flex items-center justify-center p-4';
             modal.innerHTML = `
-                <div class="glass-panel p-8 rounded-3xl max-w-md w-full text-center shadow-2xl border border-white/20">
-                    <h2 class="text-2xl md:text-3xl font-game ${winnerColor} mb-4 whitespace-nowrap">${winnerText}</h2>
+                <div class="glass-panel p-8 rounded-3xl max-w-md w-11/12 text-center shadow-2xl border border-white/20">
+                    <h2 class="text-3xl sm:text-4xl font-game ${winnerColor} mb-4 text-center leading-tight">${winnerText}</h2>
                     <div class="bg-slate-900/80 rounded-2xl p-4 my-4 border border-slate-700 flex justify-around">
                         <div>
                             <p class="text-sky-400 font-game text-sm whitespace-nowrap">TEAM 1</p>
@@ -893,7 +893,7 @@
                             <p class="text-3xl font-game text-white">${s2}</p>
                         </div>
                     </div>
-                    <button onclick="resetScores(); closeModal(this.parentElement.parentElement);" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full whitespace-nowrap">
+                    <button onclick="resetScores(); closeModal(this.parentElement.parentElement);" class="bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-game px-6 py-3 rounded-2xl text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all w-full">
                         PLAY AGAIN 🔄
                     </button>
                 </div>
