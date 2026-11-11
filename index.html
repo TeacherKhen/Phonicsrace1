@@ -1106,5 +1106,132 @@
         // Initialize Game
         initRound();
     </script>
+    
+<!-- TeacherKhen Community: Phonics Race automatic JSON loading -->
+<script>
+(() => {
+  'use strict';
+
+  const parentOrigins = new Set([
+    'https://teacherkhen.com',
+    'https://www.teacherkhen.com'
+  ]);
+
+  const TYPE_READY = 'TK_PHONICSRACE_READY';
+  const TYPE_LOAD = 'TK_PHONICSRACE_LESSON';
+  const TYPE_LOADED = 'TK_PHONICSRACE_LOADED';
+  const TYPE_ERROR = 'TK_PHONICSRACE_ERROR';
+
+  if (location.hash !== '#tk-community' || !window.opener) return;
+
+  let completed = false;
+  let signals = 0;
+
+  const signal = () => {
+    if (completed || window.opener.closed) return;
+
+    for (const origin of parentOrigins) {
+      window.opener.postMessage({ type: TYPE_READY }, origin);
+    }
+
+    signals++;
+    if (signals >= 90) clearInterval(readyTimer);
+  };
+
+  const valid = lesson => {
+    if (!lesson || typeof lesson !== 'object' || Array.isArray(lesson)) {
+      return false;
+    }
+
+    if (
+      !Array.isArray(lesson.rounds) ||
+      lesson.rounds.length < 1 ||
+      lesson.rounds.length > 50
+    ) {
+      return false;
+    }
+
+    return lesson.rounds.every(round =>
+      round &&
+      typeof round.title === 'string' &&
+      Array.isArray(round.circles) &&
+      round.circles.length >= 2 &&
+      round.circles.every(c =>
+        c &&
+        typeof c.text === 'string' &&
+        Number.isFinite(c.x) &&
+        Number.isFinite(c.y) &&
+        Number.isFinite(c.id)
+      )
+    );
+  };
+
+  window.addEventListener('message', event => {
+    if (
+      event.source !== window.opener ||
+      !parentOrigins.has(event.origin)
+    ) {
+      return;
+    }
+
+    if (event.data?.type !== TYPE_LOAD || completed) return;
+
+    try {
+      if (!valid(event.data.lesson)) {
+        throw new Error('Invalid Phonics Race lesson JSON.');
+      }
+
+      const incoming = JSON.parse(JSON.stringify(event.data.lesson));
+      gameState = incoming;
+
+      if (!gameState.scores || typeof gameState.scores !== 'object') {
+        gameState.scores = { team1: 0, team2: 0 };
+      }
+
+      if (
+        !Number.isInteger(gameState.currentRound) ||
+        gameState.currentRound < 0 ||
+        gameState.currentRound >= gameState.rounds.length
+      ) {
+        gameState.currentRound = 0;
+      }
+
+      if (!Number.isFinite(gameState.customFontSize)) {
+        gameState.customFontSize = 38;
+      }
+
+      if (!Number.isFinite(gameState.bgmVolume)) {
+        gameState.bgmVolume = 50;
+      }
+
+      document.getElementById('input-bgm-volume').value =
+        gameState.bgmVolume;
+
+      updateBgmVolume(gameState.bgmVolume);
+      initRound();
+
+      completed = true;
+      clearInterval(readyTimer);
+
+      window.opener.postMessage(
+        { type: TYPE_LOADED },
+        event.origin
+      );
+    } catch (error) {
+      window.opener.postMessage(
+        {
+          type: TYPE_ERROR,
+          message: error.message
+        },
+        event.origin
+      );
+    }
+  });
+
+  const readyTimer = setInterval(signal, 1000);
+  signal();
+})();
+</script>
+
 </body>
 </html>
